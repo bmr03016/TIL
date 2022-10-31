@@ -1,0 +1,71 @@
+import time
+
+# 1. 첫 화면 접속
+options = webdriver.ChromeOptions()
+
+#'user-agent' = '{user agrent string 검색해서 나오는 부분 드래그}'
+options.add_argument('user-agent'='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36 Edg/106.0.1370.47')
+
+driver = webdriver.Chrome(options=options)
+
+# 구글 이미지검색 사이트 이동
+driver.get("https://play.google.com/store/movies/top")
+
+# 2. 페이지 스크롤
+# Java Script의 스크롤 기능을 통해서 더 많은 이미지를 가져옴
+prev_height = driver.execute_script('return document.body.scrollHeight')
+print(prev_height)
+
+while True:
+    # 스크롤 끝까지 내림
+    driver.execute_script('window.scrollTo(0, document.body.scrollHeight)')
+    # 숫자로 지정한 초 만큼 페이지 로딩 걸림
+    time.sleep(1)  
+    # 스크롤 내린 후의 페이지 높이 = curr_height
+    curr_height = driver.execute_script('return document.body.scrollHeight')
+    print(curr_height)
+    # 더이상 스크롤 내려가지 않으면 스크롤 멈춤
+    if prev_height == curr_height:
+        break
+    prev_height = curr_height
+
+
+# 3. 필요한 정보 가져오기 위해 구문 분석
+
+soup = BeautifulSoup(driver.page_source, 'lxml')
+
+movies = soup.select('div.VfPpkd-EScbFb-JIbuQc.UVEnyf')
+
+print(len(movies))
+
+count = 0
+for movie in movies:
+    # 영화 제목
+    title = movie.select_one("div.Epkrse")
+    title = title.text
+
+    # 할인 전 가격
+    original_price = movie.select_one('span.SUZt4c.P8AFK')
+    if original_price:
+        original_price = original_price.text
+
+    else: # 할인 전 가격이 없으면 세일하는 항목이 아님
+        continue
+        
+    # 할인 후 가격
+    discount_price = movie.select_one('span.VfPpfd.VixbEe')
+    discount_price = discount_price.text
+
+    # 링크
+    link = movie.select_one('a.Si6A0c.ZD8Cqc')
+    link = 'https://play.google.com' + link['href']
+
+    print("영화 제목: ", title)
+    print("할인전 가격: ", original_price)
+    print("할인전 가격: ", discount_price)
+    print("링크: ", link)
+    print('-'*100)  # 단지 구분줄 추가
+    count += 1
+print(count)
+
+driver.quit()  # selenium 사용했으니 맨 끝에 넣어야 함
